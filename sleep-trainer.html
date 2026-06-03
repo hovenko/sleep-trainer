@@ -8,40 +8,40 @@
     <style>
 
         html, body {
-            margin:0;
-            padding:0;
-            height:100%;
-            width:100%;
-            background:black;
-            overflow:hidden;
-            font-family:sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            background: black;
+            overflow: hidden;
+            font-family: sans-serif;
         }
 
         #light {
-            position:absolute;
-            top:0;
-            left:0;
-            background:#000000;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: #000000;
         }
 
-        #menu{
-            position:absolute;
-            bottom:20px;
-            left:50%;
-            transform:translateX(-50%);
-            background:rgba(0,0,0,0.5);
-            color:white;
-            padding:16px 18px;
-            border-radius:12px;
-            display:none;
+        #menu {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 16px 18px;
+            border-radius: 12px;
+            display: none;
         }
 
-        button{
-            font-size:1em;
-            padding:10px 16px;
-            margin:6px;
-            border-radius:8px;
-            border:none;
+        button {
+            font-size: 1em;
+            padding: 10px 16px;
+            margin: 6px;
+            border-radius: 8px;
+            border: none;
         }
 
     </style>
@@ -60,12 +60,12 @@
     const menu = document.getElementById("menu");
     const fullscreenBtn = document.getElementById("fullscreenBtn")
     const demoBtn = document.getElementById("demoBtn")
-    
+
     const times = {
-        sunrise: 6*60,
-        morning: 6*60+30,
-        day: 7*60,
-        night: 19*60
+        sunrise: 6 * 60,
+        morning: 6 * 60 + 30,
+        day: 7 * 60,
+        night: 19 * 60
     };
 
     let menuMode = false
@@ -75,118 +75,114 @@
     let sunriseTimer = null
 
 
-    function minutesSinceMidnight(date){
-        return date.getHours()*60 + date.getMinutes();
+    function minutesSinceMidnight(date) {
+        return date.getHours() * 60 + date.getMinutes();
     }
 
-    function applyDay(){
-        document.body.style.background="black"
-        light.style.width="0"
-        light.style.height="0"
+    function applyDay() {
+        document.body.style.background = "black"
+        light.style.width = "0"
+        light.style.height = "0"
     }
 
-    function applyNight(){
-        document.body.style.background="black"
-        light.style.background="#aa0000"
-        light.style.width="50%"
-        light.style.height="50%"
+    function applyNight() {
+        document.body.style.background = "black"
+        light.style.background = "#aa0000"
+        light.style.width = "50%"
+        light.style.height = "50%"
     }
 
-    function applyMorning(){
-        document.body.style.background="#00aa00"
-        light.style.background="#00aa00"
-        light.style.width="100%"
-        light.style.height="100%"
+    function applyMorning() {
+        document.body.style.background = "#00aa00"
+        light.style.background = "#00aa00"
+        light.style.width = "100%"
+        light.style.height = "100%"
     }
 
-    function applySunrise(progress){
-        const size = 50 + progress*50
-        light.style.background="#cc6600"
-        light.style.width=size+"%"
-        light.style.height=size+"%"
+    function applySunrise(progress) {
+        const size = 50 + progress * 50
+        light.style.background = "#cc6600"
+        light.style.width = size + "%"
+        light.style.height = size + "%"
     }
 
 
-    function startSunriseAnimationMs(durationMs){
-        if(sunriseTimer) clearInterval(sunriseTimer)
+    function startSunriseAnimationMs(durationMs) {
+        if (sunriseTimer) clearInterval(sunriseTimer)
 
         const fps = 30
-        const interval = 1000/fps // 1000/30 =~ 33,3ms
-        const steps = durationMs/interval // 5 sekunder * 30 fps = 150 frames
+        const interval = 1000 / fps // 1000/30 =~ 33,3ms
+        const steps = durationMs / interval // 5 sekunder * 30 fps = 150 frames
         applySunrise(0);
 
-        let frame=0
-        sunriseTimer = setInterval(()=>{
+        let frame = 0
+        sunriseTimer = setInterval(() => {
             frame++
 
-            const progress = frame/steps
+            const progress = frame / steps
 
             applySunrise(progress)
 
-            if(frame>=steps){
+            if (frame >= steps) {
                 clearInterval(sunriseTimer)
-                sunriseTimer=null
+                sunriseTimer = null
             }
-        },interval)
+        }, interval)
     }
 
-    function updateClockMode(){
-        if(demoMode) return
+    function updateClockMode() {
+        if (demoMode) return
 
         const now = new Date()
         const m = minutesSinceMidnight(now)
 
-        if(m>=times.day && m<times.night){
+        if (m >= times.day && m < times.night) {
             applyDay()
-        }
-        else if(m>=times.night || m<times.sunrise){
+        } else if (m >= times.night || m < times.sunrise) {
             applyNight()
-        }
-        else if(m>=times.sunrise && m<times.morning){
+        } else if (m >= times.sunrise && m < times.morning) {
             const sunrisePlanMinutes = times.morning - times.sunrise;
             const sunriseDurationMinutes = times.morning - m;
             //const progress=(m-times.sunrise)/sunrisePlanMinutes;
             startSunriseAnimationMs(sunriseDurationMinutes);
             return;
-        }
-        else if(m>=times.morning && m<times.day){
+        } else if (m >= times.morning && m < times.day) {
             applyMorning()
         }
 
         scheduleNextUpdate()
     }
 
-    function scheduleNextUpdate(){
-        const now=new Date()
+    function scheduleNextUpdate() {
+        const now = new Date()
 
         const today = new Date()
 
-        let next=null
-        for(const timeInMinutes of Object.values(times)){
-        const t = new Date(today.setMinutes(timeInMinutes));
-            if(t>now){
-                next=t
+        let next = null
+        for (const timeInMinutes of Object.values(times)) {
+            const t = new Date(today.setMinutes(timeInMinutes));
+            if (t > now) {
+                next = t
                 break
             }
         }
 
-        if(!next){
-            next=new Date()
-            next.setDate(next.getDate()+1)
-            next.setHours(5,0,0,0) // et tidspunkt før noe starter om morgenen
+        if (!next) {
+            next = new Date()
+            next.setDate(next.getDate() + 1)
+            next.setHours(5, 0, 0, 0) // et tidspunkt før noe starter om morgenen
         }
 
-        const delay=next-now
-        setTimeout(updateClockMode,delay)
+        const delay = next - now
+        setTimeout(updateClockMode, delay)
     }
 
-    function toggleDemo(){
-        demoMode=!demoMode
+    function toggleDemo() {
+        demoMode = !demoMode
 
-        if(demoMode){
+        if (demoMode) {
             startDemo()
-        }
-        else{
+        } else {
             stopDemo()
             updateClockMode()
         }
@@ -194,88 +190,85 @@
         updateMenuIndicators()
     }
 
-    function startDemo(){
-    console.log("Starter demo");
-        demoStep=0
+    function startDemo() {
+        console.log("Starter demo");
+        demoStep = 0
         document.title =
-        runDemoStep()
+            runDemoStep()
     }
 
-    function stopDemo(){
-    console.log("Avslutter demo");
+    function stopDemo() {
+        console.log("Avslutter demo");
         clearTimeout(demoTimer)
         clearTimeout(sunriseTimer)
     }
 
-    function runDemoStep(){
-        if(!demoMode) return
+    function runDemoStep() {
+        if (!demoMode) return
 
-        if(demoStep===0){
+        if (demoStep === 0) {
             applyDay()
-            demoTimer=setTimeout(nextDemoStep,5000)
-        }
-
-        else if(demoStep===1){
+            demoTimer = setTimeout(nextDemoStep, 5000)
+        } else if (demoStep === 1) {
             applyNight()
-            demoTimer=setTimeout(nextDemoStep,5000)
-        }
-        else if(demoStep===2){
+            demoTimer = setTimeout(nextDemoStep, 5000)
+        } else if (demoStep === 2) {
             startSunriseAnimationMs(5000)
-            demoTimer=setTimeout(nextDemoStep,5000)
-        }
-        else if(demoStep===3){
+            demoTimer = setTimeout(nextDemoStep, 5000)
+        } else if (demoStep === 3) {
             applyMorning()
-            demoTimer=setTimeout(nextDemoStep,5000)
+            demoTimer = setTimeout(nextDemoStep, 5000)
         }
     }
 
-    function nextDemoStep(){
+    function nextDemoStep() {
         demoStep++
-        if(demoStep>3) demoStep=0
+        if (demoStep > 3) demoStep = 0
 
         runDemoStep()
     }
 
 
     // fullscreen
-    function enterFullscreen(){
-        if(document.documentElement.requestFullscreen){
+    function enterFullscreen() {
+        if (document.documentElement.requestFullscreen) {
             document.documentElement.requestFullscreen()
         }
 
-        setTimeout(updateMenuIndicators,200)
+        setTimeout(updateMenuIndicators, 200)
     }
 
     // meny toggle
     document.body.addEventListener("click", toggleMenu);
-    
-    function toggleMenu(){
-        menuMode=!menuMode
+
+    function toggleMenu() {
+        menuMode = !menuMode
 
         if (menuMode) {
-        console.log("Viser meny");
-        menu.style.display = "block";
+            console.log("Viser meny");
+            menu.style.display = "block";
         } else {
             console.log("Skjuler meny");
             menu.style.display = "none";
         }
     }
 
-    function updateMenuIndicators(){
-        if(document.fullscreenElement){
+    function updateMenuIndicators() {
+        if (document.fullscreenElement) {
             fullscreenBtn.textContent = "Fullscreen ✓"
-        }else{
+        } else {
             fullscreenBtn.textContent = "Fullscreen"
         }
 
-        if(demoMode){
+        if (demoMode) {
             demoBtn.textContent = "Demo mode ✓"
-        }else{
+        } else {
             demoBtn.textContent = "Demo mode"
         }
     }
 
     let wakeLock = null;
+
     async function requestWakeLock() {
         try {
             wakeLock = await navigator.wakeLock.request('screen');
@@ -300,16 +293,16 @@
     // Forsøk å reaktivere hvis siden blir synlig igjen
     document.addEventListener("visibilitychange", async () => {
         if (document.visibilityState === "visible" && wakeLock === null) {
-        console.log("Forsøker å reaktivere wake lock etter endring i synlighet.");
+            console.log("Forsøker å reaktivere wake lock etter endring i synlighet.");
             await requestWakeLock();
         }
     });
 
     setInterval(() => {
-      if (!wakeLock) {
-        requestWakeLock();
-      }
-    }, 20000*60); // hvert 20.min
+        if (!wakeLock) {
+            requestWakeLock();
+        }
+    }, 20000 * 60); // hvert 20.min
 
     document.addEventListener("fullscreenchange", updateMenuIndicators)
 
