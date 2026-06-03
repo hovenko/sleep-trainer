@@ -63,8 +63,8 @@
 
     const times = {
         sunrise: 6 * 60,
-        morning: 6 * 60 + 30,
-        day: 7 * 60,
+        morning: 6 * 60 + 30, //  6:30
+        day: 7 * 60 + 30,
         night: 19 * 60
     };
 
@@ -100,7 +100,8 @@
     }
 
     function applySunrise(progress) {
-        const size = 50 + progress * 50
+        if (progress > 1) progress = 1;
+        const size = 50 + progress * 50 // Starter animasjonen fra halve bredde og høyde (1/4 av skjermen)
         light.style.background = "#cc6600"
         light.style.width = size + "%"
         light.style.height = size + "%"
@@ -110,9 +111,8 @@
     function startSunriseAnimationMs(durationMs) {
         if (sunriseTimer) clearInterval(sunriseTimer)
 
-        const fps = 30
-        const interval = 1000 / fps // 1000/30 =~ 33,3ms
-        const steps = durationMs / interval // 5 sekunder * 30 fps = 150 frames
+        const steps = 150; // Opprinnelig: 5 sekunder * 30 fps = 150 frames
+        const stepsDuration = durationMs / steps
         applySunrise(0);
 
         let frame = 0
@@ -127,7 +127,7 @@
                 clearInterval(sunriseTimer)
                 sunriseTimer = null
             }
-        }, interval)
+        }, stepsDuration) // Opprinnelig: 33,3ms per frame
     }
 
     function updateClockMode() {
