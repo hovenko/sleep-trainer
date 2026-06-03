@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sleep Trainer</title>
+
+<style>
+
+html, body {
+    margin:0;
+    padding:0;
+    height:100%;
+    width:100%;
+    background:black;
+    overflow:hidden;
+    font-family:sans-serif;
+}
+
+#light {
+    position:absolute;
+    top:0;
+    left:0;
+    background:#000000;
+}
+
+#menu{
+    position:absolute;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:rgba(0,0,0,0.5);
+    color:white;
+    padding:16px 18px;
+    border-radius:12px;
+    display:none;
+}
+
+button{
+    font-size:1em;
+    padding:10px 16px;
+    margin:6px;
+    border-radius:8px;
+    border:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="light"></div>
+<div id="menu">
+    <button id="fullscreenBtn" onclick="enterFullscreen()">Fullscreen</button>
+    <button id="demoBtn" onclick="toggleDemo()">Demo mode</button>
+</div>
+
+<script>
+
+const light = document.getElementById("light");
+const menu = document.getElementById("menu");
+const fullscreenBtn = document.getElementById("fullscreenBtn")
+const demoBtn = document.getElementById("demoBtn")
+
+let demoMode = false
+let demoStep = 0
+let demoTimer = null
+let sunriseTimer = null
+
+
+function minutesSinceMidnight(date){
+    return date.getHours()*60 + date.getMinutes();
+}
+
+function applyDay(){
+    document.body.style.background="black"
+    light.style.width="0"
+    light.style.height="0"
+}
+
+function applyNight(){
+    document.body.style.background="black"
+    light.style.background="#aa0000"
+    light.style.width="50%"
+    light.style.height="50%"
+}
+
+function applyMorning(){
+    document.body.style.background="#00aa00"
+    light.style.background="#00aa00"
+    light.style.width="100%"
+    light.style.height="100%"
+}
+
+function applySunrise(progress){
+    const size = 50 + progress*50
+    light.style.background="#cc6600"
+    light.style.width=size+"%"
+    light.style.height=size+"%"
+}
+
+
+function startSunriseAnimation(duration){
+    if(sunriseTimer) clearInterval(sunriseTimer)
+    
+    const fps = 30
+    const interval = 1000/fps
+    const steps = duration/interval
+    
+    let frame=0
+    sunriseTimer = setInterval(()=>{
+        frame++
+        
+        const progress = frame/steps
+        
+        applySunrise(progress)
+        
+        if(frame>=steps){
+            clearInterval(sunriseTimer)
+            sunriseTimer=null
+        }
+    },interval)
+}
+
+function updateClockMode(){
+    if(demoMode) return
+    
+    const now = new Date()
+    const m = minutesSinceMidnight(now)
+    
+    const t0500 = 5*60
+    const t0600 = 6*60
+    const t0700 = 7*60
+    const t1900 = 19*60
+    
+    if(m>=t0700 && m<t1900){
+        applyDay()
+    }
+    else if(m>=t1900 || m<t0500){
+        applyNight()
+    }
+    else if(m>=t0500 && m<t0600){
+        const progress=(m-t0500)/60
+        applySunrise(progress)
+    }
+    else if(m>=t0600 && m<t0700){
+        applyMorning()
+    }
+    
+    scheduleNextUpdate()
+}
+
+function scheduleNextUpdate(){
+    const now=new Date()
+    
+    const today = new Date()
+    
+    const times=[
+        new Date(today.setHours(5,0,0,0)),
+        new Date(today.setHours(6,0,0,0)),
+        new Date(today.setHours(7,0,0,0)),
+        new Date(today.setHours(19,0,0,0))
+    ];
+        
+    let next=null
+    for(const t of times){
+        if(t>now){
+            next=t
+            break
+        }
+    }
+    
+    if(!next){
+        next=new Date()
+        next.setDate(next.getDate()+1)
+        next.setHours(5,0,0,0)
+    }
+    
+    const delay=next-now
+    setTimeout(updateClockMode,delay)
+}
+
+function toggleDemo(){
+    demoMode=!demoMode
+    
+    if(demoMode){
+        startDemo()
+    }
+    else{
+        stopDemo()
+        updateClockMode()
+    }
+    
+    updateMenuIndicators()
+}
+
+function startDemo(){
+    demoStep=0
+    document.title = 
+    runDemoStep()
+}
+
+function stopDemo(){
+    clearTimeout(demoTimer)
+    clearTimeout(sunriseTimer)
+}
+
+function runDemoStep(){
+    if(!demoMode) return
+    
+    if(demoStep===0){
+        applyDay()
+        demoTimer=setTimeout(nextDemoStep,5000)
+    }
+    
+    else if(demoStep===1){
+        applyNight()
+        demoTimer=setTimeout(nextDemoStep,5000)
+    }
+    else if(demoStep===2){
+        startSunriseAnimation(5000)
+        demoTimer=setTimeout(nextDemoStep,5000)
+    }
+    else if(demoStep===3){
+        applyMorning()
+        demoTimer=setTimeout(nextDemoStep,5000)
+    }
+}
+
+function nextDemoStep(){
+    demoStep++
+    if(demoStep>3) demoStep=0
+    
+    runDemoStep()
+}
+
+
+// fullscreen
+function enterFullscreen(){
+    if(document.documentElement.requestFullscreen){
+        document.documentElement.requestFullscreen()
+    }
+    
+    setTimeout(updateMenuIndicators,200)
+}
+
+// meny toggle
+document.body.addEventListener("click",()=>{
+    menu.style.display = menu.style.display==="none"?"block":"none"
+})
+
+function updateMenuIndicators(){
+    if(document.fullscreenElement){
+        fullscreenBtn.textContent = "Fullscreen ✓"
+    }else{
+        fullscreenBtn.textContent = "Fullscreen"
+    }
+    
+    if(demoMode){
+        demoBtn.textContent = "Demo mode ✓"
+    }else{
+        demoBtn.textContent = "Demo mode"
+    }
+}
+
+let wakeLock = null;
+async function requestWakeLock() {
+    try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        console.log("Wake lock aktivert");
+        
+        wakeLock.addEventListener('release', () => {
+            wakeLock = null;
+            console.log("Wake lock sluppet");
+        });
+    } catch (err) {
+        console.log(`${err.name}, ${err.message}`);
+    }
+}
+
+// Må trigges av brukerhandling
+document.body.addEventListener("click", async () => {
+    if (!wakeLock) {
+        await requestWakeLock();
+    }
+});
+
+// Forsøk å reaktivere hvis siden blir synlig igjen
+document.addEventListener("visibilitychange", async () => {
+    if (document.visibilityState === "visible" && wakeLock === null) {
+        await requestWakeLock();
+    }
+});
+
+setInterval(() => {
+  if (!wakeLock) {
+    requestWakeLock();
+  }
+}, 20000*60); // hvert 20.min
+
+document.addEventListener("fullscreenchange", updateMenuIndicators)
+
+
+updateClockMode()
+
+</script>
+
+</body>
+</html>
