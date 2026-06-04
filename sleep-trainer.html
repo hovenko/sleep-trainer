@@ -110,7 +110,7 @@
 
     function startSunriseAnimationMs(durationMs) {
         if (sunriseTimer) clearInterval(sunriseTimer)
-
+        console.log("Starter sunrise animasjonen")
         const steps = 150; // Opprinnelig: 5 sekunder * 30 fps = 150 frames
         const stepsDuration = durationMs / steps
         applySunrise(0);
@@ -144,8 +144,7 @@
             const sunrisePlanMinutes = times.morning - times.sunrise;
             const sunriseDurationMinutes = times.morning - m;
             //const progress=(m-times.sunrise)/sunrisePlanMinutes;
-            startSunriseAnimationMs(sunriseDurationMinutes);
-            return;
+            startSunriseAnimationMs(sunriseDurationMinutes*60*1000);
         } else if (m >= times.morning && m < times.day) {
             applyMorning()
         }
@@ -193,8 +192,7 @@
     function startDemo() {
         console.log("Starter demo");
         demoStep = 0
-        document.title =
-            runDemoStep()
+        runDemoStep()
     }
 
     function stopDemo() {
