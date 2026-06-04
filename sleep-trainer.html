@@ -22,6 +22,7 @@
             top: 0;
             left: 0;
             background: #000000;
+            transition: background-color 4s ease;
         }
 
         #menu {
@@ -45,6 +46,22 @@
         }
 
     </style>
+
+    <script>
+        function h(h) {
+            return h * 60;
+        }
+
+        const sunriseDurationMins = 30
+
+        // Sentrale tidspunkter i minutter
+        const times = {
+            sunrise: h(6),
+            morning: h(6) + sunriseDurationMins, //  6:30
+            day: h(7) + 30,
+            night: h(19)
+        };
+    </script>
 </head>
 
 <body>
@@ -53,6 +70,7 @@
 <div id="menu">
     <button id="fullscreenBtn" onclick="enterFullscreen()">Fullscreen</button>
     <button id="demoBtn" onclick="toggleDemo()">Demo mode</button>
+    <button id="startSunrise" onclick="startSunrise(sunriseDurationMins*60*1000)">Start soloppgang</button>
 </div>
 
 <script>
@@ -61,39 +79,40 @@
     const fullscreenBtn = document.getElementById("fullscreenBtn")
     const demoBtn = document.getElementById("demoBtn")
 
-    const times = {
-        sunrise: 6 * 60,
-        morning: 6 * 60 + 30, //  6:30
-        day: 7 * 60 + 30,
-        night: 19 * 60
-    };
 
     let menuMode = false
     let demoMode = false
     let demoStep = 0
     let demoTimer = null
     let sunriseTimer = null
+    let scheduleNextUpdateTimer = null
 
 
     function minutesSinceMidnight(date) {
         return date.getHours() * 60 + date.getMinutes();
     }
 
+    function pst(decimal) {
+        return (decimal * 100).toFixed(2) + '%'
+    }
+
     function applyDay() {
-        document.body.style.background = "black"
+        console.log("Apply day", new Date())
+        document.body.style.background = "#000"
         light.style.width = "0"
         light.style.height = "0"
     }
 
     function applyNight() {
-        document.body.style.background = "black"
+        console.log("Apply night", new Date())
+        document.body.style.background = "#000"
         light.style.background = "#aa0000"
         light.style.width = "50%"
         light.style.height = "50%"
     }
 
     function applyMorning() {
-        document.body.style.background = "#00aa00"
+        console.log("Apply morning", new Date())
         light.style.background = "#00aa00"
         light.style.width = "100%"
         light.style.height = "100%"
@@ -101,17 +120,17 @@
 
     function applySunrise(progress) {
         if (progress > 1) progress = 1;
+        console.log("Apply progress " + pst(progress), new Date())
         const size = 50 + progress * 50 // Starter animasjonen fra halve bredde og høyde (1/4 av skjermen)
         light.style.background = "#cc6600"
         light.style.width = size + "%"
         light.style.height = size + "%"
     }
 
-
     function startSunriseAnimationMs(durationMs) {
         if (sunriseTimer) clearInterval(sunriseTimer)
-        console.log("Starter sunrise animasjonen")
-        const steps = 150; // Opprinnelig: 5 sekunder * 30 fps = 150 frames
+        console.log("Starter sunrise animasjonen", new Date())
+        const steps = 150;
         const stepsDuration = durationMs / steps
         applySunrise(0);
 
@@ -120,14 +139,19 @@
             frame++
 
             const progress = frame / steps
-
             applySunrise(progress)
 
             if (frame >= steps) {
+                console.log("Fullført sunrise animation", new Date())
                 clearInterval(sunriseTimer)
                 sunriseTimer = null
             }
-        }, stepsDuration) // Opprinnelig: 33,3ms per frame
+        }, stepsDuration) // end setInterval
+    }
+
+    function startSunrise(sunriseDurationMs) {
+        startSunriseAnimationMs(sunriseDurationMs);
+        scheduleNextUpdateInMs(sunriseDurationMs + 1800*1000) // ingen automatikk neste 30m etter sunrise
     }
 
     function updateClockMode() {
@@ -141,10 +165,9 @@
         } else if (m >= times.night || m < times.sunrise) {
             applyNight()
         } else if (m >= times.sunrise && m < times.morning) {
-            const sunrisePlanMinutes = times.morning - times.sunrise;
             const sunriseDurationMinutes = times.morning - m;
-            //const progress=(m-times.sunrise)/sunrisePlanMinutes;
-            startSunriseAnimationMs(sunriseDurationMinutes*60*1000);
+            const sunriseDurationMs = sunriseDurationMinutes * 60 * 1000;
+            startSunriseAnimationMs(sunriseDurationMs);
         } else if (m >= times.morning && m < times.day) {
             applyMorning()
         }
@@ -159,7 +182,7 @@
 
         let next = null
         for (const timeInMinutes of Object.values(times)) {
-            const t = new Date(today.setMinutes(timeInMinutes));
+            const t = new Date(today.setHours(0, timeInMinutes, 0, 0));
             if (t > now) {
                 next = t
                 break
@@ -167,13 +190,18 @@
         }
 
         if (!next) {
-            next = new Date()
+            next = next = new Date()
             next.setDate(next.getDate() + 1)
             next.setHours(5, 0, 0, 0) // et tidspunkt før noe starter om morgenen
         }
 
         const delay = next - now
-        setTimeout(updateClockMode, delay)
+        scheduleNextUpdateInMs(delay)
+    }
+
+    function scheduleNextUpdateInMs(delayMs) {
+        clearTimeout(scheduleNextUpdateTimer)
+        scheduleNextUpdateTimer = setTimeout(updateClockMode, delayMs)
     }
 
     function toggleDemo() {
@@ -192,6 +220,7 @@
     function startDemo() {
         console.log("Starter demo");
         demoStep = 0
+        clearTimeout(sunriseTimer)
         runDemoStep()
     }
 
@@ -211,7 +240,7 @@
             applyNight()
             demoTimer = setTimeout(nextDemoStep, 5000)
         } else if (demoStep === 2) {
-            startSunriseAnimationMs(5000)
+            startSunriseAnimationMs(4000)
             demoTimer = setTimeout(nextDemoStep, 5000)
         } else if (demoStep === 3) {
             applyMorning()
@@ -281,26 +310,27 @@
         }
     }
 
+    function refreshWakeLock() {
+        return async () => {
+            if (!wakeLock) {
+                console.log("Refresh wake lock")
+                await requestWakeLock();
+            }
+        };
+    }
+
     // Må trigges av brukerhandling
-    document.body.addEventListener("click", async () => {
-        if (!wakeLock) {
-            await requestWakeLock();
-        }
-    });
+    document.body.addEventListener("click", refreshWakeLock());
 
     // Forsøk å reaktivere hvis siden blir synlig igjen
     document.addEventListener("visibilitychange", async () => {
         if (document.visibilityState === "visible" && wakeLock === null) {
-            console.log("Forsøker å reaktivere wake lock etter endring i synlighet.");
+            console.log("Reaktiverer wake lock etter endring i synlighet.");
             await requestWakeLock();
         }
     });
 
-    setInterval(() => {
-        if (!wakeLock) {
-            requestWakeLock();
-        }
-    }, 20000 * 60); // hvert 20.min
+    setInterval(refreshWakeLock(), 20000 * 60); // hvert 20.min
 
     document.addEventListener("fullscreenchange", updateMenuIndicators)
 
