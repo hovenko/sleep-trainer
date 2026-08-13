@@ -158,6 +158,10 @@
     function updateClockMode() {
         if (demoMode) return
 
+        if (sunriseTimer) {
+            clearInterval(sunriseTimer)
+        }
+
         const now = new Date()
         const m = minutesSinceMidnight(now)
 
